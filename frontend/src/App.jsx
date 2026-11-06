@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from './context/AuthContext';
 import Sidebar from './components/Sidebar';
+import FloatingChatWidget from './components/FloatingChatWidget';
 import AuthPage from './pages/AuthPage';
 import Dashboard from './pages/Dashboard';
 import Transactions from './pages/Transactions';
@@ -13,6 +14,12 @@ import Categories from './pages/Categories';
 export default function App() {
   const { isAuthenticated, loading } = useAuth();
   const [currentTab, setCurrentTab] = useState('dashboard');
+  const [dataRefreshKey, setDataRefreshKey] = useState(0);
+
+  const handleDataUpdated = () => {
+    // Incrementing key re-renders and re-fetches current active view (Dashboard, Transactions, etc.)
+    setDataRefreshKey(prev => prev + 1);
+  };
 
   if (loading) {
     return (
@@ -29,21 +36,21 @@ export default function App() {
   const renderContent = () => {
     switch (currentTab) {
       case 'dashboard':
-        return <Dashboard />;
+        return <Dashboard key={dataRefreshKey} />;
       case 'transactions':
-        return <Transactions />;
+        return <Transactions key={dataRefreshKey} />;
       case 'ai-assistant':
-        return <AIChatAssistant />;
+        return <AIChatAssistant key={dataRefreshKey} />;
       case 'savings':
-        return <Savings />;
+        return <Savings key={dataRefreshKey} />;
       case 'budgets':
-        return <Budgets />;
+        return <Budgets key={dataRefreshKey} />;
       case 'reports':
-        return <Reports />;
+        return <Reports key={dataRefreshKey} />;
       case 'categories':
-        return <Categories />;
+        return <Categories key={dataRefreshKey} />;
       default:
-        return <Dashboard />;
+        return <Dashboard key={dataRefreshKey} />;
     }
   };
 
@@ -56,6 +63,9 @@ export default function App() {
       <main className="flex-1 ml-64 p-8 max-w-7xl">
         {renderContent()}
       </main>
+
+      {/* Global Floating AI Chatbot Widget */}
+      <FloatingChatWidget onDataUpdated={handleDataUpdated} />
     </div>
   );
 }
