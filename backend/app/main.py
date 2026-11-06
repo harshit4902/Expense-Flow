@@ -9,6 +9,7 @@ from app.routers.savings import router as savings_router
 from app.routers.dashboard import router as dashboard_router
 from app.routers.reports import router as reports_router
 from app.routers.budgets import router as budgets_router
+from app.routers.ai import router as ai_router
 
 settings = get_settings()
 
@@ -46,6 +47,7 @@ def create_app() -> FastAPI:
     app.include_router(dashboard_router, prefix=settings.API_V1_STR)
     app.include_router(reports_router, prefix=settings.API_V1_STR)
     app.include_router(budgets_router, prefix=settings.API_V1_STR)
+    app.include_router(ai_router, prefix=settings.API_V1_STR)
 
     @app.get("/health", tags=["Health"])
     def health_check():

@@ -17,10 +17,9 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 24 hours
 
-    # AI Configuration (Optional)
-    AI_PROVIDER: str = "mock"  # mock, gemini, openai
-    AI_API_KEY: str = ""
-    AI_MODEL: str = ""
+    # AI Configuration (OpenAI)
+    OPENAI_API_KEY: str = ""
+    OPENAI_MODEL: str = "gpt-4o-mini"
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -32,4 +31,3 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
-

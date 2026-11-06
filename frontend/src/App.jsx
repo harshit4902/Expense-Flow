@@ -4,6 +4,7 @@ import Sidebar from './components/Sidebar';
 import AuthPage from './pages/AuthPage';
 import Dashboard from './pages/Dashboard';
 import Transactions from './pages/Transactions';
+import AIChatAssistant from './pages/AIChatAssistant';
 import Savings from './pages/Savings';
 import Budgets from './pages/Budgets';
 import Reports from './pages/Reports';
@@ -31,6 +32,8 @@ export default function App() {
         return <Dashboard />;
       case 'transactions':
         return <Transactions />;
+      case 'ai-assistant':
+        return <AIChatAssistant />;
       case 'savings':
         return <Savings />;
       case 'budgets':
@@ -56,4 +59,3 @@ export default function App() {
     </div>
   );
 }
-

@@ -19,3 +19,4 @@ frontend/.env.local
 # OS / Editor files
 .DS_Store
 *.swp
+

@@ -6,6 +6,7 @@ import {
   Target, 
   BarChart3, 
   Tags, 
+  Bot,
   LogOut,
   Wallet
 } from 'lucide-react';
@@ -14,6 +15,7 @@ import { useAuth } from '../context/AuthContext';
 const navigation = [
   { name: 'Dashboard', id: 'dashboard', icon: LayoutDashboard },
   { name: 'Transactions', id: 'transactions', icon: ArrowLeftRight },
+  { name: 'AI Assistant', id: 'ai-assistant', icon: Bot, badge: 'New' },
   { name: 'Savings', id: 'savings', icon: PiggyBank },
   { name: 'Budgets', id: 'budgets', icon: Target },
   { name: 'Reports', id: 'reports', icon: BarChart3 },
@@ -45,14 +47,21 @@ export default function Sidebar({ currentTab, setCurrentTab }) {
             <button
               key={item.id}
               onClick={() => setCurrentTab(item.id)}
-              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                 isActive
                   ? 'bg-indigo-50 text-indigo-700 shadow-sm'
                   : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
               }`}
             >
-              <Icon className={`w-5 h-5 ${isActive ? 'text-indigo-600' : 'text-slate-600'}`} />
-              {item.name}
+              <div className="flex items-center gap-3">
+                <Icon className={`w-5 h-5 ${isActive ? 'text-indigo-600' : 'text-slate-600'}`} />
+                {item.name}
+              </div>
+              {item.badge && (
+                <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 text-white">
+                  {item.badge}
+                </span>
+              )}
             </button>
           );
         })}
@@ -82,4 +91,3 @@ export default function Sidebar({ currentTab, setCurrentTab }) {
     </div>
   );
 }
-
