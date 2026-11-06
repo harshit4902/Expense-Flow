@@ -1,0 +1,21 @@
+# Virtual Environment & Python cache
+backend/venv/
+backend/__pycache__/
+backend/*/__pycache__/
+backend/*/*/__pycache__/
+backend/.pytest_cache/
+*.pyc
+*.pyo
+
+# SQLite database file & local environment
+backend/*.db
+backend/.env
+
+# Node.js / Frontend dependencies & build output
+frontend/node_modules/
+frontend/dist/
+frontend/.env.local
+
+# OS / Editor files
+.DS_Store
+*.swp
