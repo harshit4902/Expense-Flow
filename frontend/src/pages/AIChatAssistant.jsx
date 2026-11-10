@@ -12,7 +12,8 @@ import {
   CheckCircle2, 
   AlertCircle,
   Mic,
-  MicOff
+  MicOff,
+  Languages
 } from 'lucide-react';
 
 export default function AIChatAssistant() {
@@ -21,29 +22,31 @@ export default function AIChatAssistant() {
   const [loading, setLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [speechSupported, setSpeechSupported] = useState(false);
+  const [speechLang, setSpeechLang] = useState('en-IN'); // 'en-IN' or 'hi-IN'
   const messagesEndRef = useRef(null);
   const recognitionRef = useRef(null);
 
   useEffect(() => {
     fetchChatHistory();
-    setupSpeechRecognition();
+  }, []);
 
+  useEffect(() => {
+    setupSpeechRecognition(speechLang);
     return () => {
       if (recognitionRef.current) {
         recognitionRef.current.stop();
       }
     };
-  }, []);
+  }, [speechLang]);
 
-  const setupSpeechRecognition = () => {
+  const setupSpeechRecognition = (lang) => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognition) {
       setSpeechSupported(true);
       const recognition = new SpeechRecognition();
       recognition.continuous = false;
       recognition.interimResults = false;
-      // 'hi-IN' allows natural speech in Hindi, English, and Hinglish in Indian accents
-      recognition.lang = 'hi-IN';
+      recognition.lang = lang;
 
       recognition.onstart = () => {
         setIsListening(true);
@@ -104,7 +107,7 @@ export default function AIChatAssistant() {
       } else {
         setMessages([{
           role: 'assistant',
-          content: 'Namaste! Main aapka ExpenseFlow AI Assistant hoon. Aap bol kar ya type karke transactions add kar sakte hain (English, Hindi, Hinglish).\n\nExamples:\n• "Aaj maine 20 ka samosa khaya"\n• "Received 15000 salary"\n• "Savings mein 5000 dale"',
+          content: 'Hello! I am your ExpenseFlow AI Assistant. You can speak or type in English, Hindi, or Hinglish.\n\nExamples:\n• "I spent 450 rupees on dinner yesterday"\n• "Paid 1200 electricity bill"\n• "Aaj maine 20 ka samosa khaya"\n• "Received 50000 salary for this month"\n• "Saved 2000 rupees in savings"',
         }]);
       }
     } catch (err) {
@@ -142,7 +145,7 @@ export default function AIChatAssistant() {
     } catch (err) {
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: 'Maaf kijiye, message process karne mein dikkat aayi. Kripya dobara try karein.',
+        content: 'Error: Failed to process your message. Please try again.',
         isError: true,
       }]);
     } finally {
@@ -160,16 +163,32 @@ export default function AIChatAssistant() {
           </div>
           <div>
             <h1 className="text-xl font-bold text-slate-900 tracking-tight">AI Financial Assistant</h1>
-            <p className="text-xs text-slate-500">Record expenses, income & savings by voice or text</p>
+            <p className="text-xs text-slate-500">Multilingual: English & Hindi voice/text</p>
           </div>
         </div>
 
-        {speechSupported && (
-          <span className="text-[11px] font-medium text-slate-500 flex items-center gap-1.5 bg-slate-100 px-3 py-1.5 rounded-full">
-            <Mic className="w-3.5 h-3.5 text-indigo-600" />
-            Mic enabled (Hindi / Hinglish / English)
-          </span>
-        )}
+        {/* Language selector for Voice Input */}
+        <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-xl">
+          <Languages className="w-4 h-4 text-slate-500 ml-1.5" />
+          <button
+            type="button"
+            onClick={() => setSpeechLang('en-IN')}
+            className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
+              speechLang === 'en-IN' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            English
+          </button>
+          <button
+            type="button"
+            onClick={() => setSpeechLang('hi-IN')}
+            className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
+              speechLang === 'hi-IN' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            Hindi / Hinglish
+          </button>
+        </div>
       </div>
 
       {/* Chat Messages Box */}
@@ -264,7 +283,7 @@ export default function AIChatAssistant() {
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder={isListening ? "Listening... boliyen..." : "E.g. Aaj maine 20 ka samosa khaya... or click mic to speak"}
+          placeholder={isListening ? `Listening in ${speechLang === 'en-IN' ? 'English' : 'Hindi'}... speak now...` : "e.g. Spent 450 on dinner yesterday, or 20 ka samosa..."}
           disabled={loading}
           className={`w-full pl-5 pr-24 py-3.5 rounded-2xl border bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm disabled:opacity-50 transition-all ${
             isListening ? 'border-red-400 ring-2 ring-red-200 bg-red-50/20' : 'border-slate-200'
@@ -272,11 +291,10 @@ export default function AIChatAssistant() {
         />
 
         <div className="absolute right-2 top-2 flex items-center gap-1.5">
-          {/* Speech-to-Text Mic Button */}
           <button
             type="button"
             onClick={toggleListening}
-            title={isListening ? "Listening (Click to stop)" : "Speak via Microphone"}
+            title={isListening ? "Listening (Click to stop)" : `Speak in ${speechLang === 'en-IN' ? 'English' : 'Hindi'}`}
             className={`p-2 rounded-xl transition-all ${
               isListening
                 ? 'bg-red-500 text-white animate-pulse shadow-md shadow-red-200'
@@ -286,7 +304,6 @@ export default function AIChatAssistant() {
             {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
           </button>
 
-          {/* Send Button */}
           <button
             type="submit"
             disabled={!input.trim() || loading}

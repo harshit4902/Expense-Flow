@@ -7,11 +7,11 @@ import {
   User, 
   Sparkles, 
   X, 
-  MessageCircle, 
   CheckCircle2, 
   PiggyBank,
   Mic,
-  MicOff
+  MicOff,
+  Languages
 } from 'lucide-react';
 
 export default function FloatingChatWidget({ onDataUpdated }) {
@@ -21,26 +21,27 @@ export default function FloatingChatWidget({ onDataUpdated }) {
   const [loading, setLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [speechSupported, setSpeechSupported] = useState(false);
+  const [speechLang, setSpeechLang] = useState('en-IN'); // 'en-IN' or 'hi-IN'
   const messagesEndRef = useRef(null);
   const recognitionRef = useRef(null);
 
   useEffect(() => {
-    setupSpeechRecognition();
+    setupSpeechRecognition(speechLang);
     return () => {
       if (recognitionRef.current) {
         recognitionRef.current.stop();
       }
     };
-  }, []);
+  }, [speechLang]);
 
-  const setupSpeechRecognition = () => {
+  const setupSpeechRecognition = (lang) => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognition) {
       setSpeechSupported(true);
       const recognition = new SpeechRecognition();
       recognition.continuous = false;
       recognition.interimResults = false;
-      recognition.lang = 'hi-IN'; // Recognizes Hindi, English and Hinglish in Indian accents
+      recognition.lang = lang;
 
       recognition.onstart = () => {
         setIsListening(true);
@@ -107,7 +108,7 @@ export default function FloatingChatWidget({ onDataUpdated }) {
       } else {
         setMessages([{
           role: 'assistant',
-          content: 'Namaste! Main aapka AI assistant hoon. Bol kar ya type karke add karein:\n• "Aaj maine 20 ka samosa khaya"\n• "5000 salary aayi"\n• "Savings mein 2000 dale"',
+          content: 'Hello! You can speak or type in English, Hindi, or Hinglish:\n• "Spent 450 on dinner yesterday"\n• "Paid 1200 electricity bill"\n• "20 ka samosa khaya"',
         }]);
       }
     } catch (err) {
@@ -146,7 +147,7 @@ export default function FloatingChatWidget({ onDataUpdated }) {
     } catch (err) {
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: 'Error: Message process nahi ho saka. Kripya dobara try karein.',
+        content: 'Error: Failed to process your message. Please try again.',
         isError: true,
       }]);
     } finally {
@@ -156,7 +157,6 @@ export default function FloatingChatWidget({ onDataUpdated }) {
 
   return (
     <>
-      {/* Floating Toggle Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="fixed bottom-6 right-6 z-50 p-3.5 rounded-2xl bg-gradient-to-tr from-indigo-600 to-purple-600 text-white shadow-xl hover:shadow-2xl hover:scale-105 transition-all flex items-center justify-center gap-2 group"
@@ -172,18 +172,33 @@ export default function FloatingChatWidget({ onDataUpdated }) {
         )}
       </button>
 
-      {/* Floating Chat Modal */}
       {isOpen && (
         <div className="fixed bottom-24 right-6 z-50 w-96 max-w-[calc(100vw-3rem)] h-[540px] bg-white rounded-3xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-6 duration-200">
           {/* Header */}
-          <div className="p-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
+          <div className="p-3.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white flex items-center justify-between">
+            <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
                 <Bot className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h3 className="font-bold text-sm tracking-tight">ExpenseFlow AI</h3>
-                <p className="text-[11px] text-white/80">Voice & text transaction tracker</p>
+                <h3 className="font-bold text-sm tracking-tight leading-tight">ExpenseFlow AI</h3>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <button
+                    type="button"
+                    onClick={() => setSpeechLang('en-IN')}
+                    className={`text-[10px] px-1.5 py-0.5 rounded ${speechLang === 'en-IN' ? 'bg-white text-indigo-700 font-bold' : 'text-white/80 hover:text-white'}`}
+                  >
+                    EN
+                  </button>
+                  <span className="text-[10px] text-white/50">•</span>
+                  <button
+                    type="button"
+                    onClick={() => setSpeechLang('hi-IN')}
+                    className={`text-[10px] px-1.5 py-0.5 rounded ${speechLang === 'hi-IN' ? 'bg-white text-indigo-700 font-bold' : 'text-white/80 hover:text-white'}`}
+                  >
+                    HI
+                  </button>
+                </div>
               </div>
             </div>
             <button
@@ -220,7 +235,6 @@ export default function FloatingChatWidget({ onDataUpdated }) {
                       {msg.content}
                     </div>
 
-                    {/* Transaction Card */}
                     {msg.transactions && msg.transactions.length > 0 && (
                       <div className="space-y-1">
                         {msg.transactions.map((tx, i) => (
@@ -240,7 +254,6 @@ export default function FloatingChatWidget({ onDataUpdated }) {
                       </div>
                     )}
 
-                    {/* Savings Card */}
                     {msg.savings && (
                       <div className="p-2.5 bg-purple-50 border border-purple-200 rounded-xl flex items-center justify-between text-[11px]">
                         <div className="flex items-center gap-1.5 truncate">
@@ -272,24 +285,23 @@ export default function FloatingChatWidget({ onDataUpdated }) {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input Bar with Mic button */}
+          {/* Input Bar */}
           <form onSubmit={handleSend} className="p-3 bg-white border-t border-slate-100 flex items-center gap-1.5">
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder={isListening ? "Listening... boliyen..." : "e.g. 20 ka samosa khaya"}
+              placeholder={isListening ? `Listening (${speechLang === 'en-IN' ? 'EN' : 'HI'})... speak...` : "Type or click mic to speak..."}
               disabled={loading}
               className={`flex-1 px-3.5 py-2 rounded-xl bg-slate-50 border text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all ${
                 isListening ? 'border-red-400 ring-2 ring-red-200 bg-red-50/20' : 'border-slate-200'
               }`}
             />
 
-            {/* Speech to Text Microphone */}
             <button
               type="button"
               onClick={toggleListening}
-              title={isListening ? "Stop listening" : "Speak via Microphone"}
+              title={isListening ? "Stop listening" : `Speak in ${speechLang === 'en-IN' ? 'English' : 'Hindi'}`}
               className={`p-2 rounded-xl transition-all ${
                 isListening
                   ? 'bg-red-500 text-white animate-pulse shadow-md shadow-red-200'
@@ -299,7 +311,6 @@ export default function FloatingChatWidget({ onDataUpdated }) {
               {isListening ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
             </button>
 
-            {/* Send Button */}
             <button
               type="submit"
               disabled={!input.trim() || loading}
