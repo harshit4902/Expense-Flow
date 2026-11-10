@@ -27,34 +27,59 @@ import {
 
 const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#64748b'];
 
+const MONTH_NAMES = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December"
+];
+
 export default function Dashboard() {
+  const today = new Date();
   const [summary, setSummary] = useState(null);
   const [categoryBreakdown, setCategoryBreakdown] = useState([]);
   const [monthlyTrends, setMonthlyTrends] = useState([]);
   const [savingsTrends, setSavingsTrends] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Month & Year state for Category Expense Pie Chart
+  const [pieMonth, setPieMonth] = useState(today.getMonth() + 1);
+  const [pieYear, setPieYear] = useState(today.getFullYear());
+  const [pieLoading, setPieLoading] = useState(false);
+
   useEffect(() => {
     fetchDashboardData();
   }, []);
 
+  useEffect(() => {
+    fetchCategoryBreakdown(pieMonth, pieYear);
+  }, [pieMonth, pieYear]);
+
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const [sumRes, catRes, trendRes, savRes] = await Promise.all([
+      const [sumRes, trendRes, savRes] = await Promise.all([
         api.get('/dashboard/summary'),
-        api.get('/dashboard/category-breakdown'),
         api.get('/dashboard/monthly-trends?months=6'),
         api.get('/dashboard/savings-trends'),
       ]);
       setSummary(sumRes.data);
-      setCategoryBreakdown(catRes.data);
       setMonthlyTrends(trendRes.data);
       setSavingsTrends(savRes.data);
     } catch (err) {
       console.error("Dashboard error:", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchCategoryBreakdown = async (m, y) => {
+    try {
+      setPieLoading(true);
+      const res = await api.get(`/dashboard/category-breakdown?month=${m}&year=${y}`);
+      setCategoryBreakdown(res.data);
+    } catch (err) {
+      console.error("Failed to load category breakdown:", err);
+    } finally {
+      setPieLoading(false);
     }
   };
 
@@ -171,14 +196,49 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Category Breakdown Pie Chart */}
+        {/* Category Breakdown Pie Chart with Month Selector */}
         <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-sm">
-          <h2 className="text-base font-bold text-slate-900 tracking-tight mb-4">
-            Expense Breakdown by Category
-          </h2>
-          {categoryBreakdown.length === 0 ? (
-            <div className="h-64 flex items-center justify-center text-slate-600 text-sm">
-              No expense records for this period.
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+            <h2 className="text-base font-bold text-slate-900 tracking-tight">
+              Expense Breakdown by Category
+            </h2>
+
+            {/* Month & Year Selectors */}
+            <div className="flex items-center gap-2">
+              <select
+                value={pieMonth}
+                onChange={(e) => setPieMonth(parseInt(e.target.value))}
+                className="px-2.5 py-1.5 rounded-xl border border-slate-200 text-xs font-medium text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
+              >
+                {MONTH_NAMES.map((name, idx) => (
+                  <option key={idx + 1} value={idx + 1}>
+                    {name}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                value={pieYear}
+                onChange={(e) => setPieYear(parseInt(e.target.value))}
+                className="px-2.5 py-1.5 rounded-xl border border-slate-200 text-xs font-medium text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
+              >
+                {[2024, 2025, 2026, 2027].map((yr) => (
+                  <option key={yr} value={yr}>
+                    {yr}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {pieLoading ? (
+            <div className="h-64 flex items-center justify-center">
+              <div className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+            </div>
+          ) : categoryBreakdown.length === 0 ? (
+            <div className="h-64 flex flex-col items-center justify-center text-slate-500 text-sm">
+              <Calendar className="w-8 h-8 text-slate-300 mb-2" />
+              <p>No expenses recorded for {MONTH_NAMES[pieMonth - 1]} {pieYear}.</p>
             </div>
           ) : (
             <div className="h-64 flex items-center">
@@ -262,4 +322,3 @@ export default function Dashboard() {
     </div>
   );
 }
-
