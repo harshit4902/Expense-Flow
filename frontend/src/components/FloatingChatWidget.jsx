@@ -9,7 +9,9 @@ import {
   X, 
   MessageCircle, 
   CheckCircle2, 
-  PiggyBank 
+  PiggyBank,
+  Mic,
+  MicOff
 } from 'lucide-react';
 
 export default function FloatingChatWidget({ onDataUpdated }) {
@@ -17,7 +19,69 @@ export default function FloatingChatWidget({ onDataUpdated }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [speechSupported, setSpeechSupported] = useState(false);
   const messagesEndRef = useRef(null);
+  const recognitionRef = useRef(null);
+
+  useEffect(() => {
+    setupSpeechRecognition();
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    };
+  }, []);
+
+  const setupSpeechRecognition = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      setSpeechSupported(true);
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.lang = 'hi-IN'; // Recognizes Hindi, English and Hinglish in Indian accents
+
+      recognition.onstart = () => {
+        setIsListening(true);
+      };
+
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        if (transcript) {
+          setInput(prev => (prev ? `${prev} ${transcript}` : transcript));
+        }
+      };
+
+      recognition.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+        setIsListening(false);
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+
+      recognitionRef.current = recognition;
+    }
+  };
+
+  const toggleListening = () => {
+    if (!speechSupported) {
+      alert('Speech Recognition is not supported in this browser. Please use Google Chrome, Brave, or Edge.');
+      return;
+    }
+
+    if (isListening) {
+      recognitionRef.current?.stop();
+    } else {
+      try {
+        recognitionRef.current?.start();
+      } catch (err) {
+        console.error('Failed to start speech recognition:', err);
+      }
+    }
+  };
 
   useEffect(() => {
     if (isOpen && messages.length === 0) {
@@ -43,7 +107,7 @@ export default function FloatingChatWidget({ onDataUpdated }) {
       } else {
         setMessages([{
           role: 'assistant',
-          content: 'Namaste! Main aapka AI assistant hoon. Type kijiye:\n• "Aaj maine 20 ka samosa khaya"\n• "5000 salary aayi"\n• "Savings mein 2000 dale"',
+          content: 'Namaste! Main aapka AI assistant hoon. Bol kar ya type karke add karein:\n• "Aaj maine 20 ka samosa khaya"\n• "5000 salary aayi"\n• "Savings mein 2000 dale"',
         }]);
       }
     } catch (err) {
@@ -55,6 +119,10 @@ export default function FloatingChatWidget({ onDataUpdated }) {
     e.preventDefault();
     const userText = input.trim();
     if (!userText || loading) return;
+
+    if (isListening) {
+      recognitionRef.current?.stop();
+    }
 
     setMessages(prev => [...prev, { role: 'user', content: userText }]);
     setInput('');
@@ -115,7 +183,7 @@ export default function FloatingChatWidget({ onDataUpdated }) {
               </div>
               <div>
                 <h3 className="font-bold text-sm tracking-tight">ExpenseFlow AI</h3>
-                <p className="text-[11px] text-white/80">Add expenses & savings via chat</p>
+                <p className="text-[11px] text-white/80">Voice & text transaction tracker</p>
               </div>
             </div>
             <button
@@ -204,20 +272,38 @@ export default function FloatingChatWidget({ onDataUpdated }) {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input Bar */}
-          <form onSubmit={handleSend} className="p-3 bg-white border-t border-slate-100 flex items-center gap-2">
+          {/* Input Bar with Mic button */}
+          <form onSubmit={handleSend} className="p-3 bg-white border-t border-slate-100 flex items-center gap-1.5">
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="e.g. 20 ka samosa khaya"
+              placeholder={isListening ? "Listening... boliyen..." : "e.g. 20 ka samosa khaya"}
               disabled={loading}
-              className="flex-1 px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className={`flex-1 px-3.5 py-2 rounded-xl bg-slate-50 border text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all ${
+                isListening ? 'border-red-400 ring-2 ring-red-200 bg-red-50/20' : 'border-slate-200'
+              }`}
             />
+
+            {/* Speech to Text Microphone */}
+            <button
+              type="button"
+              onClick={toggleListening}
+              title={isListening ? "Stop listening" : "Speak via Microphone"}
+              className={`p-2 rounded-xl transition-all ${
+                isListening
+                  ? 'bg-red-500 text-white animate-pulse shadow-md shadow-red-200'
+                  : 'text-slate-400 hover:text-indigo-600 hover:bg-slate-100'
+              }`}
+            >
+              {isListening ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
+            </button>
+
+            {/* Send Button */}
             <button
               type="submit"
               disabled={!input.trim() || loading}
-              className="p-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white disabled:opacity-40 transition-colors"
+              className="p-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white disabled:opacity-40 transition-colors shadow-sm"
             >
               <Send className="w-3.5 h-3.5" />
             </button>
