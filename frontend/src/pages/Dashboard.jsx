@@ -241,29 +241,31 @@ export default function Dashboard() {
               <p>No expenses recorded for {MONTH_NAMES[pieMonth - 1]} {pieYear}.</p>
             </div>
           ) : (
-            <div className="h-64 flex items-center">
-              <ResponsiveContainer width="60%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={categoryBreakdown}
-                    dataKey="total_amount"
-                    nameKey="category_name"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={80}
-                    innerRadius={50}
-                    paddingAngle={3}
-                  >
-                    {categoryBreakdown.map((_, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(val) => [formatRupees(val), 'Spent']} />
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="w-[40%] space-y-2 overflow-y-auto max-h-56 pr-2">
+            <div className="flex flex-col sm:flex-row items-center gap-4 min-h-[16rem]">
+              <div className="w-full sm:w-[55%] h-56">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={categoryBreakdown}
+                      dataKey="total_amount"
+                      nameKey="category_name"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={75}
+                      innerRadius={45}
+                      paddingAngle={3}
+                    >
+                      {categoryBreakdown.map((_, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(val) => [formatRupees(val), 'Spent']} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="w-full sm:w-[45%] space-y-2 overflow-y-auto max-h-56 pr-1">
                 {categoryBreakdown.map((item, idx) => (
-                  <div key={item.category_id} className="flex items-center justify-between text-xs">
+                  <div key={item.category_id} className="flex items-center justify-between text-xs py-0.5">
                     <div className="flex items-center gap-2 truncate">
                       <span 
                         className="w-2.5 h-2.5 rounded-full flex-shrink-0" 
