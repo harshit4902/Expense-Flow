@@ -5,43 +5,52 @@ from fastapi import HTTPException, status
 from app.models.category import Category
 from app.schemas.category import CategoryCreate, CategoryUpdate
 
+# Minimal, clean standard categories
 DEFAULT_EXPENSE_CATEGORIES = [
-    "Food",
-    "Travel",
-    "Shopping",
-    "Bills",
-    "Healthcare",
-    "Education",
-    "Entertainment",
-    "Groceries",
-    "Rent",
-    "Other",
+    "Food",          # Meals, dining, cafe, snacks
+    "Travel",        # Transport, commute, fuel, cabs, metro, bus
+    "Shopping",      # Clothes, electronics, items
+    "Bills",         # Electricity, water, wifi, recharges, utilities
+    "Rent",          # Housing, room, flat rent
+    "Groceries",     # Daily essentials, kitchen, supermarket
+    "Healthcare",    # Medicines, doctor, hospital
+    "Entertainment", # Movies, outings, games, parties
+    "Education",     # Courses, books, fees
+    "Other",         # Miscellaneous expenses
 ]
 
 DEFAULT_INCOME_CATEGORIES = [
-    "Salary",
-    "Freelancing",
-    "Business",
-    "Investment",
-    "Gift",
-    "Other",
+    "Salary",        # Job salary, wages, stipend
+    "Freelancing",   # Client gigs, projects, contracts
+    "Business",      # Business revenue, store profits
+    "Investment",    # Stocks, mutual funds, interest, dividends
+    "Gift",          # Received from friends/relatives/roommates
+    "Other",         # Other income
 ]
 
 
 def seed_default_categories(db: Session, user_id: int) -> None:
-    """Seeds default income and expense categories for a user if they have none."""
-    existing_count = db.query(Category).filter(Category.user_id == user_id).count()
-    if existing_count > 0:
-        return
+    """Ensures that the minimal standard categories exist for the user,
+    without overwriting or duplicating any custom categories the user already created.
+    """
+    existing_cats = db.query(Category).filter(Category.user_id == user_id).all()
+    existing_expense_names = {c.name.lower() for c in existing_cats if c.type == "expense"}
+    existing_income_names = {c.name.lower() for c in existing_cats if c.type == "income"}
 
-    categories = []
+    new_categories = []
     for name in DEFAULT_EXPENSE_CATEGORIES:
-        categories.append(Category(user_id=user_id, name=name, type="expense"))
-    for name in DEFAULT_INCOME_CATEGORIES:
-        categories.append(Category(user_id=user_id, name=name, type="income"))
+        if name.lower() not in existing_expense_names:
+            new_categories.append(Category(user_id=user_id, name=name, type="expense"))
+            existing_expense_names.add(name.lower())
 
-    db.add_all(categories)
-    db.commit()
+    for name in DEFAULT_INCOME_CATEGORIES:
+        if name.lower() not in existing_income_names:
+            new_categories.append(Category(user_id=user_id, name=name, type="income"))
+            existing_income_names.add(name.lower())
+
+    if new_categories:
+        db.add_all(new_categories)
+        db.commit()
 
 
 def get_categories(
@@ -49,7 +58,7 @@ def get_categories(
     user_id: int,
     type_filter: Optional[str] = None,
 ) -> List[Category]:
-    """Retrieves all categories for the user, creating defaults if not yet seeded."""
+    """Retrieves all categories for the user, auto-seeding standard categories if missing."""
     seed_default_categories(db, user_id)
     query = db.query(Category).filter(Category.user_id == user_id)
     if type_filter:
@@ -75,7 +84,6 @@ def get_category_by_id(db: Session, category_id: int, user_id: int) -> Category:
 def create_category(db: Session, user_id: int, category_in: CategoryCreate) -> Category:
     """Creates a new custom category for the user."""
     clean_name = category_in.name.strip()
-    # Check duplicate for the same user and type
     existing = (
         db.query(Category)
         .filter(
@@ -112,7 +120,6 @@ def update_category(
     category = get_category_by_id(db, category_id, user_id)
     clean_name = category_in.name.strip()
 
-    # Check duplicate
     existing = (
         db.query(Category)
         .filter(
@@ -139,14 +146,12 @@ def delete_category(db: Session, category_id: int, user_id: int) -> None:
     """Deletes a category if not in use by transactions or budgets."""
     category = get_category_by_id(db, category_id, user_id)
 
-    # Check if category has transactions
     if category.transactions:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Cannot delete category because it has associated transactions.",
         )
 
-    # Check if category has budgets
     if category.budgets:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -155,4 +160,3 @@ def delete_category(db: Session, category_id: int, user_id: int) -> None:
 
     db.delete(category)
     db.commit()
-

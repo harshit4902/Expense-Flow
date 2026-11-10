@@ -7,10 +7,10 @@ from fastapi import HTTPException, status
 from app.config import get_settings
 from app.models.user import User
 from app.schemas.auth import UserRegister, UserLogin
+from app.services.category_service import seed_default_categories
 
 settings = get_settings()
 
-# Use modern recommended Argon2 hashing via pwdlib
 pwd_context = PasswordHash.recommended()
 
 
@@ -39,7 +39,7 @@ def create_access_token(data: dict, expires_delta: datetime.timedelta | None = N
 
 
 def register_user(db: Session, user_in: UserRegister) -> User:
-    """Registers a new user after verifying that the email is not already taken."""
+    """Registers a new user and pre-seeds standard minimal categories immediately."""
     existing_user = db.query(User).filter(User.email == user_in.email.lower()).first()
     if existing_user:
         raise HTTPException(
@@ -56,6 +56,10 @@ def register_user(db: Session, user_in: UserRegister) -> User:
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
+
+    # Immediately seed standard expense & income categories for the new user
+    seed_default_categories(db, new_user.id)
+
     return new_user
 
 
@@ -74,5 +78,6 @@ def authenticate_user(db: Session, credentials: UserLogin) -> User:
             detail="Invalid email or password.",
             headers={"WWW-Authenticate": "Bearer"},
         )
+    # Ensure default categories exist upon login as well
+    seed_default_categories(db, user.id)
     return user
-
