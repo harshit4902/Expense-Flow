@@ -1,7 +1,12 @@
 import axios from 'axios';
 
+// Use environment variable if set (production on Render), otherwise fallback to local proxy
+const baseURL = import.meta.env.VITE_API_URL 
+  ? `${import.meta.env.VITE_API_URL}/api/v1`
+  : '/api/v1';
+
 const api = axios.create({
-  baseURL: '/api/v1',
+  baseURL,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -35,4 +40,3 @@ api.interceptors.response.use(
 );
 
 export default api;
-
