@@ -11,6 +11,8 @@ class Settings(BaseSettings):
 
     # Database
     DATABASE_URL: str = "sqlite:///./expenseflow.db"
+    TURSO_DATABASE_URL: str = ""
+    TURSO_AUTH_TOKEN: str = ""
 
     # Security
     SECRET_KEY: str = "expenseflow-local-dev-secret-key-32charsmin!"
